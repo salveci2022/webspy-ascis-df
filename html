@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webcam e Microfone Capture Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/webcamjs@1.0.26/webcam.min.js"></script>
+</head>
+<body onload="startCapture()">
+    <h1>Captura de Imagem e Áudio</h1>
+    
+    <!-- Container da Webcam -->
+    <div id="my_camera"></div>
+    <!-- Local para exibir a imagem capturada -->
+    <div id="results"></div>
+    <!-- Exibição do áudio capturado -->
+    <audio id="audioPlayback" controls></audio>
+
+    <script type="text/javascript">
+        let mediaRecorder;
+        let audioChunks = [];
+
+        async function startCapture() {
+            try {
+                // Solicitar permissão para usar o microfone
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Inicializar o MediaRecorder com o stream de áudio
+                mediaRecorder = new MediaRecorder(stream);
+
+                // Armazenar os chunks de áudio capturados
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                // Ação a ser tomada quando a gravação for parada
+                mediaRecorder.onstop = () => {
+                    // Criar um blob do áudio capturado
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = document.getElementById('audioPlayback');
+                    audio.src = audioUrl;
+
+                    // Limpar os chunks de áudio para a próxima gravação
+                    audioChunks = [];
+                };
+
+                // Iniciar a gravação
+                mediaRecorder.start();
+                console.log('Gravação iniciada');
+
+                // Capturar a imagem da webcam
+                Webcam.set({
+                    width: 320,
+                    height: 240,
+                    image_format: 'jpeg',
+                    jpeg_quality: 90
+                });
+                Webcam.attach('#my_camera');
+                Webcam.snap(function(data_uri) {
+                    document.getElementById('results').innerHTML = '<img src="'+data_uri+'"/>';
+                });
+
+            } catch (error) {
+                console.error('Erro ao acessar o microfone:', error);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', (event) => {
+            startCapture();
+        });
+    </script>
+</body>
+</html>
